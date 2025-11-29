@@ -6,6 +6,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/categories")
 public class CategoryController {
@@ -29,10 +31,29 @@ public class CategoryController {
     }
 
     @PostMapping
-    public String saveCategory(@ModelAttribute Category category) {
+    public String saveCategory(@ModelAttribute Category category, @RequestParam Map<String, String> allParams) {
         if (category.getId() != null && category.getId().isEmpty()) {
             category.setId(null);
         }
+
+        // Process dropdown options from comma-separated strings
+        if (category.getFieldTemplates() != null) {
+            for (int i = 0; i < category.getFieldTemplates().size(); i++) {
+                String optionsKey = "fieldTemplates[" + i + "].dropdownOptionsString";
+                if (allParams.containsKey(optionsKey)) {
+                    String optionsString = allParams.get(optionsKey);
+                    if (optionsString != null && !optionsString.trim().isEmpty()) {
+                        String[] options = optionsString.split(",");
+                        java.util.List<String> optionsList = new java.util.ArrayList<>();
+                        for (String option : options) {
+                            optionsList.add(option.trim());
+                        }
+                        category.getFieldTemplates().get(i).setDropdownOptions(optionsList);
+                    }
+                }
+            }
+        }
+
         categoryRepository.save(category);
         return "redirect:/categories";
     }
@@ -54,5 +75,12 @@ public class CategoryController {
     public String deleteCategory(@PathVariable String id) {
         categoryRepository.deleteById(id);
         return "redirect:/categories";
+    }
+
+    // API endpoint to get category field templates
+    @GetMapping("/api/{name}/fields")
+    @ResponseBody
+    public Category getCategoryFields(@PathVariable String name) {
+        return categoryRepository.findByName(name).orElse(new Category());
     }
 }

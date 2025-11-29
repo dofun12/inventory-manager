@@ -8,19 +8,87 @@
 <body>
     <div th:fragment="content">
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
                         <h3 th:text="${category.id == null ? 'Add New Category' : 'Edit Category'}">Category Form</h3>
                     </div>
                     <div class="card-body">
-                        <form th:action="@{/categories}" th:object="${category}" method="post">
+                        <form th:action="@{/categories}" th:object="${category}" method="post" id="categoryForm">
                             <input type="hidden" th:field="*{id}">
 
                             <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
+                                <label for="name" class="form-label">Category Name</label>
                                 <input type="text" class="form-control" id="name" th:field="*{name}" required>
                             </div>
+
+                            <hr>
+                            <h5>Custom Fields Template</h5>
+                            <p class="text-muted small">Define fields that will appear when creating items in this
+                                category</p>
+
+                            <div id="field-templates">
+                                <!-- Existing field templates will be loaded here -->
+                                <div th:each="field, iterStat : *{fieldTemplates}" class="card mb-2">
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <label class="form-label small">Field Name</label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                    th:name="'fieldTemplates[' + ${iterStat.index} + '].name'"
+                                                    th:value="${field.name}" required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small">Type</label>
+                                                <select class="form-select form-select-sm field-type-select"
+                                                    th:name="'fieldTemplates[' + ${iterStat.index} + '].fieldType'"
+                                                    th:attr="data-index=${iterStat.index}">
+                                                    <option value="TEXT"
+                                                        th:selected="${field.fieldType.name() == 'TEXT'}">Text</option>
+                                                    <option value="NUMBER"
+                                                        th:selected="${field.fieldType.name() == 'NUMBER'}">Number
+                                                    </option>
+                                                    <option value="DATE"
+                                                        th:selected="${field.fieldType.name() == 'DATE'}">Date</option>
+                                                    <option value="DROPDOWN"
+                                                        th:selected="${field.fieldType.name() == 'DROPDOWN'}">Dropdown
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small">Required</label>
+                                                <div class="form-check form-switch mt-2">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        th:name="'fieldTemplates[' + ${iterStat.index} + '].required'"
+                                                        th:checked="${field.required}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small">&nbsp;</label>
+                                                <button type="button" class="btn btn-danger btn-sm w-100"
+                                                    onclick="this.closest('.card').remove()">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                            <div class="col-12 dropdown-options-container"
+                                                th:classappend="${field.fieldType.name() == 'DROPDOWN' ? '' : 'd-none'}"
+                                                th:attr="data-index=${iterStat.index}">
+                                                <label class="form-label small">Dropdown Options
+                                                    (comma-separated)</label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                    th:name="'fieldTemplates[' + ${iterStat.index} + '].dropdownOptionsString'"
+                                                    th:value="${#strings.listJoin(field.dropdownOptions, ', ')}"
+                                                    placeholder="e.g., New, Used, Refurbished">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3"
+                                onclick="addFieldTemplate()">
+                                <i class="bi bi-plus-circle"></i> Add Field Template
+                            </button>
 
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">Save Category</button>
@@ -31,6 +99,83 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            let fieldIndex = /*[[${category.fieldTemplates.size()}]]*/ 0;
+
+            function addFieldTemplate() {
+                const container = document.getElementById('field-templates');
+                const card = document.createElement('div');
+                card.className = 'card mb-2';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small">Field Name</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    name="fieldTemplates[${fieldIndex}].name" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Type</label>
+                                <select class="form-select form-select-sm field-type-select"
+                                    name="fieldTemplates[${fieldIndex}].fieldType" data-index="${fieldIndex}">
+                                    <option value="TEXT" selected>Text</option>
+                                    <option value="NUMBER">Number</option>
+                                    <option value="DATE">Date</option>
+                                    <option value="DROPDOWN">Dropdown</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Required</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox"
+                                        name="fieldTemplates[${fieldIndex}].required">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">&nbsp;</label>
+                                <button type="button" class="btn btn-danger btn-sm w-100"
+                                    onclick="this.closest('.card').remove()">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="col-12 dropdown-options-container d-none" data-index="${fieldIndex}">
+                                <label class="form-label small">Dropdown Options (comma-separated)</label>
+                                <input type="text" class="form-control form-control-sm"
+                                    name="fieldTemplates[${fieldIndex}].dropdownOptionsString"
+                                    placeholder="e.g., New, Used, Refurbished">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // Add event listener to the new select
+                const select = card.querySelector('.field-type-select');
+                select.addEventListener('change', handleFieldTypeChange);
+
+                fieldIndex++;
+            }
+
+            function handleFieldTypeChange(event) {
+                const select = event.target;
+                const index = select.getAttribute('data-index');
+                const container = document.querySelector(`.dropdown-options-container[data-index="${index}"]`);
+
+                if (select.value === 'DROPDOWN') {
+                    container.classList.remove('d-none');
+                } else {
+                    container.classList.add('d-none');
+                }
+            }
+
+            // Add event listeners to existing selects
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.field-type-select').forEach(select => {
+                    select.addEventListener('change', handleFieldTypeChange);
+                });
+            });
+        </script>
     </div>
 </body>
 

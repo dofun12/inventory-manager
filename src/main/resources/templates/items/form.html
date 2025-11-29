@@ -83,11 +83,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Container for deleted images -->
                             <div id="deletedImagesContainer"></div>
 
+                            <!-- Category-specific fields will be loaded here -->
+                            <div id="category-fields-container"></div>
+
                             <hr>
-                            <h5>Dynamic Attributes</h5>
+                            <h5>Additional Custom Attributes</h5>
+                            <p class="text-muted small">Add any extra fields not covered by the category template</p>
                             <div id="dynamic-fields">
                                 <div th:each="attr : *{attributes}" class="row mb-2">
                                     <div class="col-5">
@@ -105,7 +108,7 @@
                             </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm mb-3"
                                 onclick="addDynamicField()">
-                                <i class="bi bi-plus"></i> Add Attribute
+                                <i class="bi bi-plus"></i> Add Custom Attribute
                             </button>
 
                             <div class="d-grid gap-2">
@@ -140,6 +143,7 @@
             </div>
         </div>
 
+        <script th:src="@{/js/category-fields.js}"></script>
         <script>
             function addDynamicField() {
                 const container = document.getElementById('dynamic-fields');
@@ -187,10 +191,12 @@
                         option.selected = true;
                         select.appendChild(option);
 
-                        // Close modal
                         const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
                         modal.hide();
                         document.getElementById('newCategoryName').value = '';
+
+                        // Load fields for the new category
+                        loadCategoryFields(category.name);
                     })
                     .catch(error => {
                         console.error('Error:', error);
