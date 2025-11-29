@@ -34,8 +34,13 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .defaultSuccessUrl("/dashboard", true)
                         .permitAll())
+                .rememberMe(remember -> remember
+                        .key("uniqueAndSecretKey")
+                        .tokenValiditySeconds(7 * 24 * 60 * 60) // 7 days
+                        .userDetailsService(userDetailsService))
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
+                        .deleteCookies("remember-me")
                         .permitAll());
 
         return http.build();
