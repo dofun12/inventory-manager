@@ -17,4 +17,12 @@ public interface ItemRepository extends MongoRepository<Item, String> {
     // but for simple cases this works.
     @Query("{ '$or': [ { 'name': { '$regex': ?0, '$options': 'i' } }, { 'category': { '$regex': ?0, '$options': 'i' } }, { 'location': { '$regex': ?0, '$options': 'i' } } ] }")
     List<Item> search(String keyword);
+
+    // Owner-based queries
+    List<Item> findByOwnerId(String ownerId);
+
+    List<Item> findByOwnerIdOrderByIdDesc(String ownerId);
+
+    @Query("{ 'ownerId': ?0, '$or': [ { 'name': { '$regex': ?1, '$options': 'i' } }, { 'category': { '$regex': ?1, '$options': 'i' } }, { 'location': { '$regex': ?1, '$options': 'i' } } ] }")
+    List<Item> searchByOwner(String ownerId, String keyword);
 }

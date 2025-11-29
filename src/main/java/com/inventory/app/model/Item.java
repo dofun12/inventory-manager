@@ -19,6 +19,10 @@ public class Item {
     private String location;
     private String category;
 
+    // Owner information
+    private String ownerId;
+    private String ownerUsername;
+
     // Paths to stored images
     private List<String> photos = new ArrayList<>();
 

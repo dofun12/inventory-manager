@@ -2,10 +2,12 @@ package com.inventory.app.controller;
 
 import com.inventory.app.model.Item;
 import com.inventory.app.service.ItemService;
+import com.inventory.app.util.SecurityUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +27,19 @@ public class ItemController {
 
     @GetMapping
     public String listItems(@RequestParam(required = false) String keyword, Model model) {
-        model.addAttribute("items", itemService.searchItems(keyword));
+        String userId = SecurityUtils.getCurrentUserId();
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+
+        List<Item> items;
+        if (isAdmin) {
+            items = itemService.searchItems(keyword);
+        } else {
+            items = itemService.searchItemsByUser(userId, keyword);
+        }
+
+        model.addAttribute("items", items);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("isAdmin", isAdmin);
         return "items/list";
     }
 
@@ -93,7 +106,9 @@ public class ItemController {
         itemToSave.setAttributes(attributes);
 
         System.out.println("DEBUG: Saving item: " + itemToSave);
-        itemService.saveItem(itemToSave, files, allParams);
+        String userId = SecurityUtils.getCurrentUserId();
+        String username = SecurityUtils.getCurrentUsername();
+        itemService.saveItem(itemToSave, files, allParams, userId, username);
 
         // Post-save logic: if cover image is null but we have photos, set the first one
         // as cover
@@ -102,7 +117,7 @@ public class ItemController {
             System.out.println(
                     "DEBUG: Cover image is null, setting default to first photo: " + itemToSave.getPhotos().get(0));
             itemToSave.setCoverImage(itemToSave.getPhotos().get(0));
-            itemService.saveItem(itemToSave, null, null); // Resave just to update cover
+            itemService.saveItem(itemToSave, null, null, userId, username); // Resave just to update cover
         }
 
         return "redirect:/items";
@@ -110,15 +125,36 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public String viewItem(@PathVariable String id, Model model) {
-        model.addAttribute("item", itemService.getItemById(id));
+        String userId = SecurityUtils.getCurrentUserId();
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+
+        Item item = itemService.getItemById(id);
+
+        // Check if user can access this item
+        if (!isAdmin && !item.getOwnerId().equals(userId)) {
+            throw new RuntimeException("Access denied: You don't have permission to view this item");
+        }
+
+        model.addAttribute("item", item);
+        model.addAttribute("canEdit", SecurityUtils.canAccessItem(item.getOwnerId()));
         return "items/view";
     }
 
     @GetMapping("/edit/{id}")
     public String editItemForm(@PathVariable("id") String id, Model model) {
         System.out.println("Editing item with ID: " + id);
+
+        String userId = SecurityUtils.getCurrentUserId();
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+
         Item item = itemService.getItemById(id);
         System.out.println("Found item: " + item.getName());
+
+        // Check if user can edit this item
+        if (!isAdmin && !item.getOwnerId().equals(userId)) {
+            throw new RuntimeException("Access denied: You don't have permission to edit this item");
+        }
+
         model.addAttribute("item", item);
         model.addAttribute("categories", categoryRepository.findAll());
         return "items/form";
@@ -126,6 +162,16 @@ public class ItemController {
 
     @GetMapping("/delete/{id}")
     public String deleteItem(@PathVariable String id) {
+        String userId = SecurityUtils.getCurrentUserId();
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+
+        Item item = itemService.getItemById(id);
+
+        // Check if user can delete this item
+        if (!isAdmin && !item.getOwnerId().equals(userId)) {
+            throw new RuntimeException("Access denied: You don't have permission to delete this item");
+        }
+
         itemService.deleteItem(id);
         return "redirect:/items";
     }
