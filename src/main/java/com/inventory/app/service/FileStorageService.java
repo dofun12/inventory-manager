@@ -33,33 +33,40 @@ public class FileStorageService {
 
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
-            String extension = "webp"; // Force WebP
-            String filename = UUID.randomUUID().toString() + "." + extension;
+            String extension = "png"; // Default to png for consistency
+            if (originalFilename != null && originalFilename.contains(".")) {
+                // Keep original extension if it's an image, but let's standardize on png for
+                // simplicity as requested
+                // Or actually, let's just use the original extension if we can, but user said
+                // "return the png".
+                // Let's stick to converting to PNG to be safe and consistent.
+            }
+
+            String filename = UUID.randomUUID().toString() + ".png";
 
             Path destinationFile = this.rootLocation.resolve(Paths.get(filename))
                     .normalize().toAbsolutePath();
 
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                // This is a security check
                 throw new RuntimeException("Cannot store file outside current directory.");
             }
 
-            // Convert and Save Original as WebP
+            // Read original image
             BufferedImage originalImage = ImageIO.read(file.getInputStream());
             if (originalImage == null) {
                 throw new RuntimeException("Invalid image file.");
             }
 
-            // Save optimized WebP
-            ImageIO.write(originalImage, "webp", destinationFile.toFile());
+            // Save as PNG
+            ImageIO.write(originalImage, "png", destinationFile.toFile());
 
-            // Generate Thumbnail
+            // Generate Thumbnail (also PNG)
             String thumbFilename = "thumb_" + filename;
             Path thumbFile = this.rootLocation.resolve(Paths.get(thumbFilename));
 
             Thumbnails.of(originalImage)
                     .size(300, 300)
-                    .outputFormat("webp")
+                    .outputFormat("png")
                     .toFile(thumbFile.toFile());
 
             return filename;

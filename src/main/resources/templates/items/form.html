@@ -63,11 +63,7 @@
                                     <div class="col" th:each="photo : ${item.photos}">
                                         <div class="card h-100 position-relative">
                                             <div class="ratio ratio-1x1">
-                                                <img th:if="${photo.endsWith('.webp')}"
-                                                    th:src="@{'/uploads/thumb_' + ${photo}}"
-                                                    class="card-img-top object-fit-cover">
-                                                <img th:unless="${photo.endsWith('.webp')}"
-                                                    th:src="@{'/uploads/' + ${photo}}"
+                                                <img th:if="${photo != null}" th:src="@{'/uploads/thumb_' + ${photo}}"
                                                     class="card-img-top object-fit-cover">
                                             </div>
                                             <div class="card-body p-2 text-center">
@@ -78,7 +74,8 @@
                                                         style="font-size: 0.8rem;">Cover</label>
                                                 </div>
                                                 <button type="button" class="btn btn-danger btn-sm mt-1 w-100"
-                                                    onclick="markForDeletion(this, '${photo}')">
+                                                    th:attr="data-photo=${photo}"
+                                                    onclick="markForDeletion(this, this.getAttribute('data-photo'))">
                                                     <i class="bi bi-trash"></i> Remove
                                                 </button>
                                             </div>
