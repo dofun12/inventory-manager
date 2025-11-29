@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html(~{:: content})}">
+
+<head>
+    <title>Item Form</title>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 th:text="${item.id == null ? 'Add New Item' : 'Edit Item'}">Item Form</h3>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/items}" th:object="${item}" method="post" enctype="multipart/form-data">
+                            <input type="hidden" th:field="*{id}">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="name" th:field="*{name}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="category" class="form-label">Category</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="category" th:field="*{category}">
+                                            <option value="">Select Category</option>
+                                            <option th:each="cat : ${categories}" th:value="${cat.name}"
+                                                th:text="${cat.name}"></option>
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal"
+                                            data-bs-target="#addCategoryModal">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="quantity" th:field="*{quantity}"
+                                        required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="location" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="location" th:field="*{location}">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="images" class="form-label">Add Photos</label>
+                                <input type="file" class="form-control" id="images" name="images" multiple
+                                    accept="image/*">
+                            </div>
+
+                            <!-- Image Management Section -->
+                            <div class="mb-4" th:if="${item.id != null and not #lists.isEmpty(item.photos)}">
+                                <h5>Manage Images</h5>
+                                <div class="row row-cols-2 row-cols-md-4 g-3">
+                                    <div class="col" th:each="photo : ${item.photos}">
+                                        <div class="card h-100 position-relative">
+                                            <div class="ratio ratio-1x1">
+                                                <img th:if="${photo.endsWith('.webp')}"
+                                                    th:src="@{'/uploads/thumb_' + ${photo}}"
+                                                    class="card-img-top object-fit-cover">
+                                                <img th:unless="${photo.endsWith('.webp')}"
+                                                    th:src="@{'/uploads/' + ${photo}}"
+                                                    class="card-img-top object-fit-cover">
+                                            </div>
+                                            <div class="card-body p-2 text-center">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="coverImage"
+                                                        th:value="${photo}" th:checked="${photo == item.coverImage}">
+                                                    <label class="form-check-label"
+                                                        style="font-size: 0.8rem;">Cover</label>
+                                                </div>
+                                                <button type="button" class="btn btn-danger btn-sm mt-1 w-100"
+                                                    onclick="markForDeletion(this, '${photo}')">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Container for deleted images -->
+                            <div id="deletedImagesContainer"></div>
+
+                            <hr>
+                            <h5>Dynamic Attributes</h5>
+                            <div id="dynamic-fields">
+                                <div th:each="attr : *{attributes}" class="row mb-2">
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" th:value="${attr.key}" readonly>
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" th:name="'attr_' + ${attr.key}"
+                                            th:value="${attr.value}">
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="this.closest('.row').remove()">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3"
+                                onclick="addDynamicField()">
+                                <i class="bi bi-plus"></i> Add Attribute
+                            </button>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Save Item</button>
+                                <a th:href="@{/items}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Category Modal -->
+        <div class="modal fade" id="addCategoryModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="newCategoryName" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="newCategoryName">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="saveNewCategory()">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function addDynamicField() {
+                const container = document.getElementById('dynamic-fields');
+                const row = document.createElement('div');
+                row.className = 'row mb-2';
+                row.innerHTML = `
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="Attribute Name (e.g. Socket)" onchange="updateName(this)">
+                    </div>
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="Value">
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.row').remove()">X</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            }
+
+            function updateName(input) {
+                const valueInput = input.parentElement.nextElementSibling.querySelector('input');
+                valueInput.name = 'attr_' + input.value;
+            }
+
+            function saveNewCategory() {
+                const name = document.getElementById('newCategoryName').value;
+                if (!name) return;
+
+                fetch('/categories/api/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: name })
+                })
+                    .then(response => {
+                        if (response.ok) return response.json();
+                        throw new Error('Network response was not ok.');
+                    })
+                    .then(category => {
+                        const select = document.getElementById('category');
+                        const option = document.createElement('option');
+                        option.value = category.name;
+                        option.text = category.name;
+                        option.selected = true;
+                        select.appendChild(option);
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+                        modal.hide();
+                        document.getElementById('newCategoryName').value = '';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to save category. Make sure you are logged in.');
+                    });
+            }
+
+            function markForDeletion(btn, filename) {
+                const card = btn.closest('.col');
+                card.style.opacity = '0.5';
+                btn.disabled = true;
+                btn.innerText = 'Removed';
+
+                const container = document.getElementById('deletedImagesContainer');
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'deletedImages';
+                input.value = filename;
+                container.appendChild(input);
+            }
+        </script>
+    </div>
+</body>
+
+</html>

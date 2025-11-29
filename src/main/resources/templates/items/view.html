@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html(~{:: content})}">
+
+<head>
+    <title>Item Details</title>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-3">
+            <a th:href="@{/items}" class="btn btn-outline-secondary">&larr; Back to List</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 th:text="${item.name}">Item Name</h3>
+                <div>
+                    <a th:href="@{/items/edit/{id}(id=${item.id})}" class="btn btn-primary">Edit</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Category:</strong> <span th:text="${item.category}">Category</span></p>
+                        <p><strong>Location:</strong> <span th:text="${item.location}">Location</span></p>
+                        <p><strong>Quantity:</strong> <span th:text="${item.quantity}"
+                                class="badge bg-info text-dark fs-6">0</span></p>
+
+                        <div th:if="${!item.attributes.isEmpty()}">
+                            <h5>Attributes</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    th:each="attr : ${item.attributes}">
+                                    <span th:text="${attr.key}" class="fw-bold">Key</span>
+                                    <span th:text="${attr.value}">Value</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Photos</h5>
+                        <div class="row g-2">
+                            <div class="col-6" th:each="photo : ${item.photos}">
+                                <img th:src="@{'/uploads/' + ${photo}}" class="img-fluid rounded border"
+                                    alt="Item Photo">
+                            </div>
+                            <div class="col-12" th:if="${item.photos.isEmpty()}">
+                                <p class="text-muted">No photos uploaded.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

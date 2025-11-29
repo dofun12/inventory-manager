@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html(~{:: content})}">
+
+<head>
+    <title>Dashboard</title>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <h2 class="mb-4">Dashboard</h2>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-header">Total Items</div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${totalItems}">0</h5>
+                    </div>
+                </div>
+            </div>
+            <!-- Add more stats here if needed -->
+        </div>
+
+        <h3 class="mb-3">Recent Items</h3>
+        <div class="row row-cols-1 row-cols-md-4 g-4">
+            <div class="col" th:each="item : ${recentItems}">
+                <div class="card h-100">
+                    <div class="ratio ratio-1x1 bg-secondary bg-opacity-10">
+                        <!-- Priority: Cover Image (WebP or Legacy) -->
+                        <img th:if="${item.coverImage != null and item.coverImage.endsWith('.webp')}"
+                            th:src="@{'/uploads/thumb_' + ${item.coverImage}}" class="card-img-top object-fit-cover"
+                            alt="Cover Image">
+
+                        <img th:if="${item.coverImage != null and not item.coverImage.endsWith('.webp')}"
+                            th:src="@{'/uploads/' + ${item.coverImage}}" class="card-img-top object-fit-cover"
+                            alt="Cover Image">
+
+                        <!-- Fallback: First Image -->
+                        <img th:if="${item.coverImage == null and not #lists.isEmpty(item.photos) and item.photos[0].endsWith('.webp')}"
+                            th:src="@{'/uploads/thumb_' + ${item.photos[0]}}" class="card-img-top object-fit-cover"
+                            alt="Item Image">
+
+                        <img th:if="${item.coverImage == null and not #lists.isEmpty(item.photos) and not item.photos[0].endsWith('.webp')}"
+                            th:src="@{'/uploads/' + ${item.photos[0]}}" class="card-img-top object-fit-cover"
+                            alt="Item Image">
+
+                        <div th:if="${#lists.isEmpty(item.photos)}"
+                            class="d-flex align-items-center justify-content-center text-muted">
+                            <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate" th:text="${item.name}">Item Name</h5>
+                        <p class="card-text">
+                            <span class="badge bg-secondary" th:text="${item.category}">Category</span>
+                            <br>
+                            <small class="text-muted" th:text="${item.location}">Location</small>
+                        </p>
+                        <a th:href="@{/items/{id}(id=${item.id})}"
+                            class="btn btn-sm btn-outline-primary stretched-link">View Details</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Show message if no items -->
+            <div class="col-12" th:if="${#lists.isEmpty(recentItems)}">
+                <div class="alert alert-info">
+                    No items found. <a th:href="@{/items/new}">Add your first item!</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <a th:href="@{/items/new}" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-plus-circle"></i> Add New Item
+                </a>
+            </div>
+            <div class="col-md-6">
+                <a th:href="@{/items}" class="btn btn-info btn-lg w-100 text-white">
+                    <i class="bi bi-list-ul"></i> View All Items
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
